@@ -41,7 +41,7 @@ client.on("ready", () => {
 
 /**
  * Returns the approximated remaining time until being able to request tokens again.
- * @param {Date} lastTokenRequestMoment Last moment in which the user requested funds
+ * @param {number} lastTokenRequestMoment Last moment in which the user requested funds
  */
 const nextAvailableToken = (lastTokenRequestMoment: number) => {
 	// how many ms there are in minutes/hours
