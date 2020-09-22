@@ -214,7 +214,7 @@ const botActionFaucetSend = async (msg: Message, authorId: string, messageConten
 		lastBalanceCheck.timestamp = Date.now();
 
 		// If balance is low, send notification to Slack
-		if (lastBalanceCheck.balance < params.BALANCE_AMOUNT_THRESHOLD) {
+		if (lastBalanceCheck.balance < params.BALANCE_AMOUNT_THRESHOLD * (10n ** TOKEN_DECIMAL)) {
 			await sendSlackNotification(lastBalanceCheck.balance / (10n ** TOKEN_DECIMAL));
 		}
 	}
