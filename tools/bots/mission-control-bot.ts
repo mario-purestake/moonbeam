@@ -65,7 +65,6 @@ const sendSlackNotification = async (account_balance: BigInt) => {
 
 	// Options for the HTTP request (data is written later)
 	const options = {
-		hostname: params.SLACK_WEBHOOK,
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -76,7 +75,7 @@ const sendSlackNotification = async (account_balance: BigInt) => {
 	// Promise to "await" until request has ended
 	const completed_request = new Promise((resolve, reject) => {
 		// Send request to Slack webhook
-		const request = http.request(options, (response) => {
+		const request = http.request(params.SLACK_WEBHOOK, options, (response) => {
 			let data = '';
 
 			response.on('data', (chunk) => {
