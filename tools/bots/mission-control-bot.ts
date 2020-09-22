@@ -191,19 +191,19 @@ const botActionFaucetSend = async (msg: Message, authorId: string, messageConten
 	// update user last fund retrieval
 	receivers[authorId] = Date.now();
 
-	await web3Api.eth.sendSignedTransaction(
-		(
-			await web3Api.eth.accounts.signTransaction(
-				{
-					value: `${params.TOKEN_COUNT * (10n ** TOKEN_DECIMAL)}`,
-					gasPrice: "0x01",
-					gas: "0x21000",
-					to: `0x${address}`,
-				},
-				params.ACCOUNT_KEY
-			)
-		).rawTransaction
-	);
+	// await web3Api.eth.sendSignedTransaction(
+	// 	(
+	// 		await web3Api.eth.accounts.signTransaction(
+	// 			{
+	// 				value: `${params.TOKEN_COUNT * (10n ** TOKEN_DECIMAL)}`,
+	// 				gasPrice: "0x01",
+	// 				gas: "0x21000",
+	// 				to: `0x${address}`,
+	// 			},
+	// 			params.ACCOUNT_KEY
+	// 		)
+	// 	).rawTransaction
+	// );
 	const accountBalance = BigInt(await web3Api.eth.getBalance(`0x${address}`));
 
 	// Check balance every 10min (minimum interval, dependent on when the function is called)
