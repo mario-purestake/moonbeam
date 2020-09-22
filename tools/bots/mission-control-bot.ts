@@ -209,7 +209,8 @@ const botActionFaucetSend = async (msg: Message, authorId: string, messageConten
 	// Check balance every 10min (minimum interval, dependent on when the function is called)
 	if (lastBalanceCheck.timestamp < Date.now() - 600 * 1000) {
 		// Update cached info for last balance check
-		lastBalanceCheck.balance = BigInt(await web3Api.eth.getBalance(`0x${params.ACCOUNT_ID}`));
+		// lastBalanceCheck.balance = BigInt(await web3Api.eth.getBalance(`0x${params.ACCOUNT_ID}`));
+		lastBalanceCheck.balance = BigInt("111") * (10n ** TOKEN_DECIMAL);
 		lastBalanceCheck.timestamp = Date.now();
 
 		// If balance is low, send notification to Slack
