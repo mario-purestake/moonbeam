@@ -1,6 +1,6 @@
 import { Client, MessageEmbed, Message } from "discord.js";
 import Web3 from "web3";
-import http from "http";
+import https from "https";
 import fs from "fs";
 
 
@@ -75,7 +75,7 @@ const sendSlackNotification = async (account_balance: BigInt) => {
 	// Promise to "await" until request has ended
 	const completed_request = new Promise((resolve, reject) => {
 		// Send request to Slack webhook
-		const request = http.request(params.SLACK_WEBHOOK, options, (response) => {
+		const request = https.request(params.SLACK_WEBHOOK, options, (response) => {
 			let data = '';
 
 			response.on('data', (chunk) => {
