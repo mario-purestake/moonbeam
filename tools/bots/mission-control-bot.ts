@@ -1,13 +1,37 @@
 import { Client, MessageEmbed, Message } from "discord.js";
 import Web3 from "web3";
 import https from "https";
-import fs from "fs";
 
 
 const TOKEN_DECIMAL = 18n;
 const EMBED_COLOR_CORRECT = 0x642f95;
 const EMBED_COLOR_ERROR = 0xc0392b;
-const SLACK_MSG_CONTENT_FILEPATH = "./msg-alert-to-slack.json";
+const SLACK_MSG_CONTENTS = `
+{
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "The account linked to the bot is running low on funds."
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*Account ID:*\n{{ account-fix-me }}"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Current balance:*\n{{ balance-fix-me }} DEV"
+        }
+      ]
+    }
+  ]
+}
+`;
 
 const params = {
 	// Discord app information
@@ -25,7 +49,7 @@ const params = {
 	// Token distribution
 	TOKEN_COUNT: BigInt(process.env.TOKEN_COUNT || 10),
 	FAUCET_SEND_INTERVAL: parseInt(process.env.FAUCET_SEND_INTERVAL || "1"), // hours
-	BALANCE_AMOUNT_THRESHOLD: BigInt(process.env.BALANCE_AMOUNT_THRESHOLD || 100), // DEV
+	BALANCE_ALERT_THRESHOLD: BigInt(process.env.BALANCE_ALERT_THRESHOLD || 100), // DEV
 }
 
 Object.keys(params).forEach(param => {
@@ -54,14 +78,9 @@ const lastBalanceCheck = {
  */
 const sendSlackNotification = async (account_balance: BigInt) => {
 	// Message to send to Slack (JSON payload)
-	const data = fs.readFileSync(
-		// file where the msg is written
-		SLACK_MSG_CONTENT_FILEPATH, 
-		// options used to open the file
-		{ encoding: "utf8", flag: "r" }
-	)
-	.replace("{{ account-fix-me }}", params.ACCOUNT_ID)
-	.replace("{{ balance-fix-me }}", account_balance.toString());
+	const data = SLACK_MSG_CONTENTS
+		.replace("{{ account-fix-me }}", params.ACCOUNT_ID)
+		.replace("{{ balance-fix-me }}", account_balance.toString());
 
 	// Options for the HTTP request (data is written later)
 	const options = {
@@ -83,15 +102,15 @@ const sendSlackNotification = async (account_balance: BigInt) => {
 			});
 
 			response.on('end', () => {
-				console.log("Received data from Slack webhook:", JSON.parse(data));
+				console.log("Received data from Slack webhook:", data);
 				resolve(data);
 			});
-			
+
 		}).on("error", (err) => {
 			console.log("Error while sending Slack notification:", err.message);
 			reject(err);
 		});
-	
+
 		request.write(data);
 		request.end();
 	});
@@ -101,7 +120,7 @@ const sendSlackNotification = async (account_balance: BigInt) => {
 
 /**
  * Returns the approximated remaining time until being able to request tokens again.
- * @param {Date} lastTokenRequestMoment Last moment in which the user requested funds
+ * @param {number} lastTokenRequestMoment Last moment in which the user requested funds
  */
 const nextAvailableToken = (lastTokenRequestMoment: number) => {
 	// how many ms there are in minutes/hours
@@ -154,7 +173,7 @@ const checkH160AddressIsCorrect = (address: string, msg: Message) => {
 			.setColor(EMBED_COLOR_ERROR)
 			.setTitle("Invalid address")
 			.setFooter("Addresses must follow the H160 address format");
-	
+
 		// send message to channel
 		msg.channel.send(errorEmbed);
 	}
@@ -170,7 +189,7 @@ const checkH160AddressIsCorrect = (address: string, msg: Message) => {
  * @param {string} messageContent Content of the message
  */
 const botActionFaucetSend = async (msg: Message, authorId: string, messageContent: string) => {
-	if (receivers[authorId] > Date.now() - 3600 * 1000) {
+	if (receivers[authorId] > Date.now() - params.FAUCET_SEND_INTERVAL * 3600 * 1000) {
 		const errorEmbed = new MessageEmbed()
 			.setColor(EMBED_COLOR_ERROR)
 			.setTitle(`You already received tokens!`)
@@ -213,7 +232,7 @@ const botActionFaucetSend = async (msg: Message, authorId: string, messageConten
 		lastBalanceCheck.timestamp = Date.now();
 
 		// If balance is low, send notification to Slack
-		if (lastBalanceCheck.balance < params.BALANCE_AMOUNT_THRESHOLD * (10n ** TOKEN_DECIMAL)) {
+		if (lastBalanceCheck.balance < params.BALANCE_ALERT_THRESHOLD * (10n ** TOKEN_DECIMAL)) {
 			await sendSlackNotification(lastBalanceCheck.balance / (10n ** TOKEN_DECIMAL));
 		}
 	}
